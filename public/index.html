@@ -1,19 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <link rel="icon" href="<%= BASE_URL %>favicon.ico">
-    <title>Pizzería</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons">
-  </head>
-  <body>
-    <noscript>
-      <strong>We're sorry but vue-ecommerce doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
-    </noscript>
-    <div id="app"></div>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <link rel="icon" href="<%= BASE_URL %>favicon.ico">
+  <title>Pizzería</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons">
+  <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+  <noscript>
+    <strong>We're sorry but vue-ecommerce doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
+  </noscript>
+  <div id="app"></div>
+  <script>
+    // Create a Stripe client.
+    var stripe = Stripe('pk_test_0O64VFv2CpBBw2tXLQjY41tf00kIe8lGmk');
+    // Create an instance of Elements.
+    var elements = stripe.elements();
+    </script>
     <!-- built files will be auto injected -->
+    <style>
+      /**
+      * The CSS shown here will not be introduced in the Quickstart guide, but shows
+      * how you can use CSS to style your Element's container.
+      */
+      .StripeElement {
+        box-sizing: border-box;
+        
+        height: 40px;
+        
+        padding: 10px 12px;
+        
+        border: 1px solid transparent;
+        border-radius: 4px;
+        background-color: white;
+        
+        box-shadow: 0 1px 3px 0 #e6ebf1;
+        -webkit-transition: box-shadow 150ms ease;
+        transition: box-shadow 150ms ease;
+      }
+      
+      .StripeElement--focus {
+        box-shadow: 0 1px 3px 0 #cfd7df;
+      }
+      
+      .StripeElement--invalid {
+        border-color: #fa755a;
+      }
+      
+      .StripeElement--webkit-autofill {
+        background-color: #fefde5 !important;
+      }
+    </style>
   </body>
-</html>
+  </html>
+  

@@ -1,13 +1,12 @@
 <template>
     <div>
-        <h1>Order</h1>
         <OrderComponent/>
     </div>
 </template>
 
 
 <script lang="ts">
-import {Vue,Component} from 'vue-property-decorator';
+import {Vue,Component} from 'vue-property-decorator'
 import OrderComponent from '@/components/OrderComponent.vue'
 @Component({
 components: {
