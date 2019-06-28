@@ -16,12 +16,17 @@
           <v-stepper-items>
             <v-stepper-content step="1">
               <v-form ref="form" v-model="valid" lazy-validation>
-                <v-text-field v-model="especialidad" :counter="10" :rules="especialidadRules" label="Especialidad" required></v-text-field>            
-                <v-select v-model="tamanioPizza" :items="items" :rules="[v => !!v || 'No has seleccionado un tamaño para la pizza']" label="Seleccione el tamaño de la pizza" required></v-select>
-                <v-btn color="primary" @click="e1 = 2">Continue</v-btn>
-                <v-btn flat>Cancel</v-btn>
+                <v-chip color="white" text-color="black">Seleccionaste: {{ pizza.nombre_pizza}}</v-chip>
+                <v-flex mb12 xs12 sm12>
+                  <v-select v-model="especialidad" :items="items" :rules="[v => !!v || 'Debes seleccionar un tamaño']" label="Seleccione el tamaño de la pizza" required></v-select>
+                </v-flex>
+                <v-chip color="white" text-color="black">Precio según el tamaño:</v-chip>
+                <v-chip color="white" text-color="black" v-if="especialidad=='Chica'">Precio: ${{ parseFloat(parseFloat(pizza.precio)) }}</v-chip>
+                <v-chip color="white" text-color="black" v-if="especialidad=='Mediana'">Precio: ${{ parseFloat(parseFloat(pizza.precio) + 50) }}</v-chip>
+                <v-chip color="white" text-color="black" v-if="especialidad=='Grande'">Precio: ${{ parseFloat(parseFloat(pizza.precio) + 80) }}</v-chip>
               </v-form>
-              
+              <v-btn color="primary" @click="e1 = 2"  :disabled="!valid">Continue</v-btn>
+              <v-btn flat color="error" to="/">Cancelar</v-btn>
             </v-stepper-content>
             
             <v-stepper-content step="2">
@@ -32,7 +37,7 @@
                 <v-text-field v-model="direccion" :rules="direccionRules" label="Dirección" required></v-text-field>
                 <v-text-field v-model="referencias"  label="Referencias de la casa"></v-text-field>                           
                 <v-btn color="primary" @click="e1 = 3">Continue</v-btn>
-                <v-btn flat>Cancel</v-btn>
+                <v-btn flat color="error" to="/">Cancel</v-btn>
               </v-form>
             </v-stepper-content>
             
@@ -43,7 +48,7 @@
                     <h3 class="headline mb-0">Resumen de pedido</h3>
                     <div> 
                       <h4> Especialidad: {{ especialidad }}</h4>
-                      <h4>Tamaño y precio: {{ tamanioPizza }}</h4>
+                      <h4>Tamaño y precio: {{ especialidad }} - {{ precio_final }}</h4>
                       <h4><label>Nombre del cliente:</label> {{ name }}</h4>
                       <h4><label> Dirección de entrega:</label> {{ direccion }}</h4>
                       <h4>Hora de entrega: 6:00 pm</h4>
@@ -53,11 +58,10 @@
                 <v-btn color="primary" @click="e1 = 4">Mis datos son correctos</v-btn>
                 <v-btn flat>Cancel</v-btn>
               </v-card>
-              <!--
-                <v-btn color="primary" @click="e1 = 1">Confirmar pedido</v-btn>
-              -->
             </v-stepper-content>
             <v-stepper-content step="4">
+              <div ref="card"></div>
+              <v-btn color="primary" @click="purchase()">Terminar compra</v-btn>
             </v-stepper-content>
           </v-stepper-items>
         </v-stepper>
@@ -66,49 +70,167 @@
   </v-container>  
 </template>
 
-<script lang="ts">
+<script>
+  let stripe = Stripe(`pk_test_0O64VFv2CpBBw2tXLQjY41tf00kIe8lGmk`),
+  elements = stripe.elements(),
+  card = undefined;
   export default {
+    mounted: function () {
+      card = elements.create('card',{hidePostalCode: true});
+      card.mount(this.$refs.card);
+      
+    },
     data: () => ({
+      pizza: {
+        id: null,
+        nombre_pizza: null,
+        descripcion_pizza: null,
+        imagen: null,
+        precio: null
+      },
       valid: true,
       especialidad: '',
       especialidadRules: [
-      (v:any) => !!v || 'La especialidad es requerida',
-      (v:any) => (v && v.length >= 5) || 'La especialidad debe tener al menos 5 caracteres'
+      (v) => !!v || 'La especialidad es requerida',
+      (v) => (v && v.length >= 5) || 'La especialidad debe tener al menos 5 caracteres'
       ],
       email: '',
       emailRules: [
-      (v:any) => !!v || 'El correo es requerido',
-      (v:any) => /.+@.+/.test(v) || 'El correo no es válido'
+      (v) => !!v || 'El correo es requerido',
+      (v) => /.+@.+/.test(v) || 'El correo no es válido'
       ],
       tamanioPizza: null,
       items: [
-      'Chica - $120.00',
-      'Mediana - $180.00',
-      'Grande - $220.00',
-      'Mega - $280.00'
+      'Chica',
+      'Mediana',
+      'Grande'
       ],
       checkbox: false,
       e1: 0,
       name: '',
       nameRules: [
-      (v:any) => !!v || 'Tu nombre es necesario',
-      (v:any) => (v.length >= 3) || 'Tu nombre no es válido'
+      (v) => !!v || 'Tu nombre es necesario',
+      (v) => (v.length >= 3) || 'Tu nombre no es válido'
       ],
       number: '',
       numberRules: [
-      (v:any) => !!v || 'Tu número telefónico es requerido',
-      (v:any) => (v.length >= 10) || 'Tu número no es válido'
+      (v) => !!v || 'Tu número telefónico es requerido',
+      (v) => (v.length >= 10) || 'Tu número no es válido'
       ],
       direccion: '',
       direccionRules: [
-      (v:any) => !!v || 'Tu dirección es requerida',
-      (v:any) => (v.length >= 5) || 'Tu dirección no es válida'
+      (v) => !!v || 'Tu dirección es requerida',
+      (v) => (v.length >= 5) || 'Tu dirección no es válida'
       ],
-      referencias: ''
-    })
+      referencias: '',
+      precio_final: 0,
+      tokenPago: null,
+      /* Datos para stripe */
+    }),
+    
+    created(){
+      this.getPizzaSeleccionada()
+    },
+    methods: {
+      async getPizzaSeleccionada()
+      {
+        await this.$axios.get(`http://127.0.0.1:8000/api/v1/pizzas/menu/especialidad/${parseInt(this.$route.params.id)}`)
+        .then((response) => {
+          this.pizza.id = response.data['details'].id
+          this.pizza.nombre_pizza = response.data['details'].nombre_pizza
+          this.pizza.imagen = response.data['details'].imagen
+          this.pizza.precio = response.data['details'].precio
+        })
+        .catch(err => {
+          alert('Algo salió mal')
+        })
+      },
+      async purchase () {
+        let token;
+        await  stripe.createToken(card).then(function(result) {
+          token = result.token.id;
+          if (result.error) {
+            self.hasCardErrors = true;
+            self.$forceUpdate(); // Forcing the DOM to update so the Stripe Element can update.
+            return;
+          }
+          
+        });
+        console.log(token)
+        this.tokenPago = token
+        this.submit()        
+      },
+      submit (){
+        this.$axios.get(`http://127.0.0.1:8000/api/v1/pizzas/order/create`, {
+          params: {
+            nombre: this.name,
+            pizza: this.pizza.nombre_pizza,
+            correo: this.email,
+            direccion: this.direccion,
+            telefono: this.number,
+            stripe_token: this.tokenPago,
+            cantidad_pizzas: 1,
+            total: this.precio_final
+          }
+        })
+        .then( (result) => {
+          console.log(result)
+          swal("Compra realizada", "Agradecemos tu preferencia", "success")
+          this.$router.push({ name: 'home' }) 
+        },
+        err => {
+          console.log(err)
+        }
+        )
+
+        // let pago;
+        // this.date = new Date()
+        // this.date =new Date(this.date.getFullYear(),this.date.getMonth(),this.date.getHours(),this.date.getMinutes(),this.date.getSeconds(),this.date.getDate()).toISOString().split('T')[0]
+        // if(this.select === 'Chica'){
+        //   pago = this.element.precioBase+70
+        // }
+        // if(this.select === 'Mediana'){
+        //   pago = this.element.precioBase+100
+        // }
+        // if(this.select === 'Grande'){
+        //   pago = this.element.precioBase+140
+        // }
+        // this.$axios.post(`http://127.0.0.1:3333/api/v1/ordenes`,{
+        //   nombre: this.name,
+        //   correo: this.email,
+        //   direccion: this.direccion,
+        //   telefono: this.number,
+        //   tokenPago: this.tokenPago,
+        //   fecha: this.date,
+        //   cantidadPizzas: 1,
+        //   totalPago: pago,
+        //   pizza: this.element.nombrePizza
+          
+        // }).then((reponse)=>{
+        //   console.log(reponse)
+        // }).catch( (e) => {
+        //   console.log(e)
+        // })
+      }
+    },
+    watch: {
+      especialidad: function(newValue, oldValue)
+      {
+        switch (newValue) {
+          case 'Chica':
+          this.precio_final = this.pizza.precio
+          break;
+          case 'Mediana':
+          this.precio_final = parseFloat(parseFloat(this.pizza.precio) + 50)
+          break;
+          case 'Grande':
+          this.precio_final = parseFloat(parseFloat(this.pizza.precio) + 80)
+          break;
+        }
+      }
+    }
   }
 </script>
 
-<style lang="">
-  
+<style>
 </style>
