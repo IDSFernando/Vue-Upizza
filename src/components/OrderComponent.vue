@@ -1,7 +1,7 @@
 <template>
-  <v-container>
-    <v-layout row>
-      <v-flex xs12 sm12 pa-3>
+  <v-container fluid grid-list-md>
+    <v-layout row wrap>
+      <v-flex d-flex xs12 sm12 pa-3>
         <v-stepper v-model="e1">
           <v-stepper-header>
             <v-stepper-step :complete="e1 > 1" step="1">Elige tu pizza</v-stepper-step>
@@ -170,47 +170,24 @@
             telefono: this.number,
             stripe_token: this.tokenPago,
             cantidad_pizzas: 1,
-            total: this.precio_final
+            total: Math.round(parseFloat(this.precio_final).toFixed(2)*100)
           }
         })
         .then( (result) => {
-          console.log(result)
-          swal("Compra realizada", "Agradecemos tu preferencia", "success")
-          this.$router.push({ name: 'home' }) 
+          this.$axios.get(`http://127.0.0.1:8000/api/v1/pizzas/cobrar/${this.tokenPago}`)
+          .then((result) => {
+            swal("Compra realizada", "Agradecemos tu preferencia", "success")
+            this.$router.push({ name: 'home' })
+          },
+          errPago => {
+            swal("No se pudo realizar la compra", "", "error")
+            console.log(errPago)
+          })
         },
         err => {
           console.log(err)
         }
         )
-
-        // let pago;
-        // this.date = new Date()
-        // this.date =new Date(this.date.getFullYear(),this.date.getMonth(),this.date.getHours(),this.date.getMinutes(),this.date.getSeconds(),this.date.getDate()).toISOString().split('T')[0]
-        // if(this.select === 'Chica'){
-        //   pago = this.element.precioBase+70
-        // }
-        // if(this.select === 'Mediana'){
-        //   pago = this.element.precioBase+100
-        // }
-        // if(this.select === 'Grande'){
-        //   pago = this.element.precioBase+140
-        // }
-        // this.$axios.post(`http://127.0.0.1:3333/api/v1/ordenes`,{
-        //   nombre: this.name,
-        //   correo: this.email,
-        //   direccion: this.direccion,
-        //   telefono: this.number,
-        //   tokenPago: this.tokenPago,
-        //   fecha: this.date,
-        //   cantidadPizzas: 1,
-        //   totalPago: pago,
-        //   pizza: this.element.nombrePizza
-          
-        // }).then((reponse)=>{
-        //   console.log(reponse)
-        // }).catch( (e) => {
-        //   console.log(e)
-        // })
       }
     },
     watch: {
