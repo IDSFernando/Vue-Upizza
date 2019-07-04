@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "upizza-soa"
+  },
+  "targets": {
+    "upizza-soa": {
+      "hosting": {
+        "upizza-client": [
+          "upizza-soa"
+        ]
+      }
+    }
+  }
+}

@@ -23,12 +23,44 @@ messaging.requestPermission()
 .then(() => Firebase.messaging().getToken())
 .then((token) => {
   console.log(token)
-  localStorage.setItem('clientToken', JSON.stringify(token))
+  const currentFCMToken = localStorage.getItem('clientToken')
+  if(!currentFCMToken)// Si no se ha guardado el token
+  {
+    console.log(token)
+    localStorage.setItem('clientToken', ''+token)// yeah, has to be this way :c
+  }
+  else// ya se guardó pero el token cambió
+  {
+    if(token != currentFCMToken)
+    {
+      localStorage.setItem('clientToken', ''+token)
+      //  Actualizar el token en firestore
+      let firestore = Firebase.firestore()
+      let ref = firestore.collection('clientes').get()
+      .then(
+        (registros) => {
+          registros.forEach(element => {
+            if(element.data().token != currentFCMToken)
+            {
+              let query = firestore.doc('clientes/'+element.id).update({token: token})
+              console.log('Se ha actualizado el token FCM')
+            }
+          });
+        }
+      )
+    }
+  }
+  
+  // checar si el token cambió
+  
 })
 .catch(err => {
   console.log(err)
 })
 
+messaging.onMessage((payload) => {
+  console.log(payload)
+})
 
 // function setFirestoreDocRef()
 // {
