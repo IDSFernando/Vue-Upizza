@@ -176,6 +176,11 @@
         .then( (result) => {
           this.$axios.get(`http://127.0.0.1:8000/api/v1/pizzas/cobrar/${this.tokenPago}`)
           .then((result) => {
+            // Insertar pedido en firestore
+            const firestore = this.$Firebase.firestore()
+            firestore.collection('clientes').add({
+              token: localStorage.getItem('clientToken')
+            })
             swal("Compra realizada", "Agradecemos tu preferencia", "success")
             this.$router.push({ name: 'home' })
           },
