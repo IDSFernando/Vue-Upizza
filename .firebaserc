@@ -6,7 +6,7 @@
     "upizza-soa": {
       "hosting": {
         "upizza-client": [
-          "upizza-soa"
+          "upizza-client"
         ]
       }
     }

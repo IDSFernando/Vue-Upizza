@@ -134,20 +134,48 @@
     methods: {
       async getPizzaSeleccionada()
       {
-        await this.$axios.get(`http://127.0.0.1:8000/api/v1/pizzas/menu/especialidad/${parseInt(this.$route.params.id)}`)
-        .then((response) => {
-          this.pizza.id = response.data['details'].id
-          this.pizza.nombre_pizza = response.data['details'].nombre_pizza
-          this.pizza.imagen = response.data['details'].imagen
-          this.pizza.precio = response.data['details'].precio
-        })
-        .catch(err => {
-          alert('Algo salió mal')
-        })
+
+        const pedidos = JSON.parse(localStorage.getItem('ordenes'))
+        if(!pedidos)
+        {
+          localStorage.setItem('ordenes', JSON.stringify({
+            pizzas: []
+          }))
+        }
+
+
+        const firestore = this.$Firebase.firestore()
+        firestore.collection('menu').where('id', '==', parseInt( this.$route.params.id))
+        .get()
+        .then(
+          (entradas) => {
+            entradas.forEach(pizza => {
+              this.pizza.id = pizza.data().id
+              this.pizza.nombre_pizza = pizza.data().nombre_pizza
+              this.pizza.imagen = pizza.data().imagen
+              this.pizza.precio = pizza.data().precio
+            })
+          }
+        )
+        .catch(
+          err => console.log(err)
+        )
+        // await this.$axios.get(`https://f05ba791.ngrok.io/api/v1/pizzas/menu/especialidad/${parseInt(this.$route.params.id)}`)
+        // .then((response) => {
+        //   this.pizza.id = response.data['details'].id
+        //   this.pizza.nombre_pizza = response.data['details'].nombre_pizza
+        //   this.pizza.imagen = response.data['details'].imagen
+        //   this.pizza.precio = response.data['details'].precio
+        // })
+        // .catch(err => {
+        //   alert('Algo salió mal')
+        // })
       },
       async purchase () {
         let token;
         await  stripe.createToken(card).then(function(result) {
+          console.log(result)
+          console.log(result.token)
           token = result.token.id;
           if (result.error) {
             self.hasCardErrors = true;
@@ -161,38 +189,58 @@
         this.submit()        
       },
       submit (){
-        this.$axios.get(`http://127.0.0.1:8000/api/v1/pizzas/order/create`, {
-          params: {
-            nombre: this.name,
-            pizza: this.pizza.nombre_pizza,
-            correo: this.email,
-            direccion: this.direccion,
-            telefono: this.number,
-            stripe_token: this.tokenPago,
-            cantidad_pizzas: 1,
-            total: Math.round(parseFloat(this.precio_final).toFixed(2)*100)
-          }
-        })
-        .then( (result) => {
-          this.$axios.get(`http://127.0.0.1:8000/api/v1/pizzas/cobrar/${this.tokenPago}`)
-          .then((result) => {
-            // Insertar pedido en firestore
-            const firestore = this.$Firebase.firestore()
-            firestore.collection('clientes').add({
-              token: localStorage.getItem('clientToken')
-            })
-            swal("Compra realizada", "Agradecemos tu preferencia", "success")
-            this.$router.push({ name: 'home' })
-          },
-          errPago => {
-            swal("No se pudo realizar la compra", "", "error")
-            console.log(errPago)
-          })
-        },
-        err => {
-          console.log(err)
+        const carrito = JSON.parse(localStorage.getItem('ordenes'))
+        const nuevaPizza = {
+          nombre: this.name,
+          pizza: this.pizza.nombre_pizza,
+          correo: this.email,
+          direccion: this.direccion,
+          telefono: this.number,
+          cantidad_pizzas: 1,
+          total: Math.round(parseFloat(this.precio_final).toFixed(2)*100),
+          cliente: localStorage.getItem('clientToken'),
+          estado: 'Tu pizza ya está en el horno',
+          stripe_token: this.tokenPago
         }
-        )
+        carrito.pizzas.push(nuevaPizza)
+        const newStructure = JSON.stringify(carrito)
+        localStorage.setItem('ordenes', newStructure)
+        swal("Pizza agregada al carrito", "Vista la sección de tus compras para pagar", "success")
+        this.$router.push({ name: 'home' })
+        
+        // Almacenar en localStorage las compras, para después pagar y subir a firebase
+        // this.$axios.get(`https://f05ba791.ngrok.io/api/v1/pizzas/order/create`, {
+        //   params: {
+        //     nombre: this.name,
+        //     pizza: this.pizza.nombre_pizza,
+        //     correo: this.email,
+        //     direccion: this.direccion,
+        //     telefono: this.number,
+        //     stripe_token: this.tokenPago,
+        //     cantidad_pizzas: 1,
+        //     total: Math.round(parseFloat(this.precio_final).toFixed(2)*100)
+        //   }
+        // })
+        // .then( (result) => {
+        //   this.$axios.get(`https://f05ba791.ngrok.io/api/v1/pizzas/cobrar/${this.tokenPago}`)
+        //   .then((result) => {
+        //     // Insertar pedido en firestore
+        //     const firestore = this.$Firebase.firestore()
+        //     firestore.collection('clientes').add({
+        //       token: localStorage.getItem('clientToken')
+        //     })
+        //     swal("Compra realizada", "Agradecemos tu preferencia", "success")
+        //     this.$router.push({ name: 'home' })
+        //   },
+        //   errPago => {
+        //     swal("No se pudo realizar la compra", "", "error")
+        //     console.log(errPago)
+        //   })
+        // },
+        // err => {
+        //   console.log(err)
+        // }
+        // )
       }
     },
     watch: {

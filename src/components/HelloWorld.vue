@@ -44,10 +44,19 @@
     },
     methods: {
       loadMenuPizzas(){
-        this.$axios.get('http://127.0.0.1:8000/api/v1/pizzas/menu')
+        // this.$axios.get('https://f05ba791.ngrok.io/api/v1/pizzas/menu')
+        // .then(
+        //   menu => {
+        //     this.menu = menu.data['menu']
+        //   }
+        // )
+        const firestore = this.$Firebase.firestore()
+        firestore.collection('menu').get()
         .then(
-          menu => {
-            this.menu = menu.data['menu']
+          (querySnapshot) => {
+            querySnapshot.forEach(entrada => {
+              this.menu.push(entrada.data())
+            })
           }
         )
       }
